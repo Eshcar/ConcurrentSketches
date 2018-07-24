@@ -1,0 +1,32 @@
+\section{Implementation}
+\label{sub:implementation}
+
+We implemented our both concurrent sketches inside
+DataSketches~\cite{}, which is a Java open source library
+of stochastic streaming algorithms.
+In both cases (quantiles and theta), we build our concurrent
+sketch on top of the sequential sketch implementation, which was
+already very optimized in the library.
+
+To avoid false sharing, unnecessary cash misses, and memory
+flashes we let each worker thread to locally maintain its private
+part of the sketch.
+One way to achieve it is by using thread local memory.
+However, since a single sketch update requires so little
+computations, we measured that accessing thread local memory per
+every operation decreases the update throughput by 30 percent.
+Therefore, we choose a different approach that requires little
+changes in the API.
+Given a shared sketch, instead of calling its methods
+directly, every worker thread first wraps it with a context
+(sometime called handler) that implements the same interface as
+the sketch, and then access the sketch only through its context.
+The context is stored private memory that is close to the core
+the thread runs on, and it has all the necessary information
+(e.g., thread id) that the worker thread has to know in order to 
+work with the shared sketch.  
+
+
+
+%Code example?
+

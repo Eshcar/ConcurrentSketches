@@ -1,0 +1,70 @@
+\documentclass[11pt, a4paper]{article}
+
+\input{mypackages.tex}
+\input{mystyle.tex}
+
+% declaration of variables and foreach blocks
+\algblock{Vars}{EndFor}
+\algrenewtext{Vars}{variables}
+\algrenewtext{EndVars}{}
+\algblock{ForEach}{EndFor}
+\algrenewtext{ForEach}{for each }
+
+\begin{document}
+
+
+\title{Fast Concurrent Data Sketches} 
+%with Lightweight Synchronization}
+
+\author{Alexander Spiegelman, 
+Edward Bortnikov,  
+Eshcar Hillel, 
+Idit Keidar 
+et al.}
+ 
+%    \author{{Alexander Spiegelman} \thanks{Alexander Spiegelman is
+%      grateful to the Azrieli Foundation or the award of
+%   an Azrieli Fellowship.} \\Viterbi EE
+%      Department\\Technion, Haifa, Israel\\sashas@tx.technion.ac.il\\
+%      \and
+%      {Idit Keidar}\\Viterbi EE
+%      Department\\Technion, Haifa, Israel\\idish@ee.technion.ac.il
+%      }
+   
+
+\date{}
+
+
+\maketitle
+
+
+\input{abstract.tex}
+\input{introduction.tex}
+\input{SketchesOverview.tex}
+\input{Theta.tex}
+\input{Quantiles.tex}
+%\input{Implementation.tex}
+\input{Evaluation.tex}
+\input{discussion.tex}            
+
+
+ %\input{sections/introduction.tex} 
+ % \input{sections/model.tex}    
+ % \input{sections/dynamicStorage.tex}
+ % \input{sections/circumventImpossibility.tex}
+ % \input{sections/summaryAndFutureWork.tex}
+ % \appendix
+ % \input{sections/appendixProofAlg.tex}
+
+%\newpage
+\bibliographystyle{plain}
+%\bibliographystyle{splncs03}
+\bibliography{ConcurrentSketches}
+
+
+
+
+%\newpage
+
+
+\end{document}

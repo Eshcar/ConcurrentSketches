@@ -1,0 +1,96 @@
+\section{Model}
+\label{sec:model}
+
+
+
+
+\subsection{Streaming}
+
+
+We consider a problem of a single sketch summary that is built
+from infinite streams of data items such that there is a
+dedicated thread to every stream that only it processes.
+We denote by $S_{e,p}$ a sketch that with probability $p$
+returns answer with an error of at most $e$ in respect to the
+items that have been processed, and we denote by $n(t)$ the
+number of items that were processed (by all threads) by time
+$t$.
+
+\subsection{Relaxed semantics}
+
+
+
+
+
+% In order to define concurrent correct behavior we need first to
+% define how the sketch should behave in sequential runs.
+% The sequential specification of a sketch $S_{e,p}$ is the
+% following:
+% For all times $t$, every query that
+% completes at $t$ returns an answer with an error of at most $e$
+% in respect to $n(t)$.
+
+Since data items arrive in streams, and each stream can
+potentially have multiple sources in the real world and some
+links in the network my be faster than others, it follows
+that (1) the order in which events appear in a stream is not
+necessarily the order in which they were generated and (2) some
+of the items can be lost in the way.
+In addition, since sketches are inherently approximate and all
+updates commute, providing solutions with linearizabilty in
+respect to strict semantics is an overkill.
+It makes more sense, to provide a slightly weaker safety
+guarantee that allows reads (statistical quires) to miss some of
+the processed data items if we can exploit it to provide
+more efficient solutions.
+
+In this paper we consider a semantic relaxation that we believe
+makes a lot of sense in sketches.
+Our relaxation is a variation of an out-of-order relaxation
+presented in~\cite{Henzinger}, which in turn generalized the
+relaxation presented in~\cite{Afek}.
+
+Intuitively, we allow every read (statistical quire) to miss
+a bounded number of updates that precedes it.
+Formally, given a sequential specification of some sketch
+$sk$, we define the \emph{k-perforated sequential specification}
+of $sk$ in the following way:
+A sequential run $r$ of $sk$ satisfies $sk$'s \emph{perforated
+specification} if for every read $rd$ in $r$ there is run $r'$
+that is identical to $r$ except of at most $k$ updates
+that appear in $r$ and not in $r'$, in which $rd$ satisfies
+$sk$'s sequential specification.
+
+Given a concurrent run $r$ of a sketch $sk$, we say that a
+\emph{k-perforated linearization} $L_r$ of $r$ is a
+sequential run that satisfies $r$'s operation precedence
+relation and $sk$'s \emph{k-perforated sequential specification}.
+We say that a concurrent sketch $sk$ is \emph{k-perforated
+relaxation} if every run of $sk$ has a \emph{k-perforated
+linearization}.
+
+
+\subsection{General Scheme}
+\label{sub:generalScheme}
+
+
+
+
+Given a sketch $sk$ with a sequential implementation $S$ such
+that every run of $S$ satisfies $sk$'s sequential specification,
+we give a general scheme to create a concurrent version of
+$S$ that satisfies \emph{k-perforated linearization}.
+First, extend $S$ to support concurrent reads, and denote this
+implementation by $S'$.
+Then, a generic structure that includes (1) a shared
+instance of $S'$; and (2) local data structures $L_1,.. L_n$
+that buffer operations to be added to $S'$.
+To satisfy \emph{k-perforated linearization} ensure that ($A_1$)
+all buffer contain no more than k operations together; and
+($A_2$) the propagation from each $L_i$ to $S'$ is equivalent to
+running the sequence of operations masked by $L_i$ on $S'$.
+In the following sections we present two concurrent algorithms
+using the above structure and prove that they satisfy conditions
+$A_1$ and $A_2$.
+
+

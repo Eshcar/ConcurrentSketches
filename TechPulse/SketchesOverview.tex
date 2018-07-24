@@ -1,0 +1,308 @@
+\section{Correctness of Concurrent Sketches}
+\label{sec:concurrentSketches}
+
+
+We now specify the expected semantics of concurrent sketches. 
+%We now overview our approach to concurrent sketches.
+Section~\ref{sec:semantics} overviews the interface and correctness criteria of existing (non-concurrent) sketches. 
+Section~\ref{sec:rsemantics} then discusses how we relax sketch semantics,
+and Section~\ref{sub:proveCorrect} discusses correctness under concurrency.
+
+
+\subsection{Sketches interface and correctness}
+\label{sec:semantics}
+
+
+% API 
+A sketch $S$ supports two API methods -- 
+\begin{description}
+\item[$S$.update($a_i$)] processes stream element $a_i$; and 
+\item[$S$.query(arg)] returns the function estimated by the sketch, for example, the number of unique elements; 
+ takes an optional argument, e.g., the requested quantile.
+ \item[$S$.union($S'$)] merges sketches $S$ and $S'$ into $S$; that is, if $S$ initially represents stream A and $S'$ 
+ represents stream $A'$, then after this call, $S$ represents the union of the two streams. 
+ Sketches that support this operator are called \emph{mergeable}.
+\inred{see if we can support it below}
+\end{description}
+
+% Sequential specification
+Today, sketches are used sequentially, so that the entire stream $A = a_1, a_2, \dots a_n$ is processed 
+and only then the sketch is queried. $S$.query(arg) then returns an estimate of the desired function 
+on the entire stream. 
+Sketches use randomization and their accuracy is defined in one of two ways:
+\begin{enumerate}
+\item An \emph{unbiased} sketch provides an estimate  $\hat{e}$ whose expectation is the correct quantity $e$ 
+(for example, the number of unique elements in the stream in a $\Theta$ sketch).  
+The \emph{Relative Standard Error (RSE)} is then derived from the variance $\sigma^2(\hat{e})$  of the estimate
+as 
+\[ \sqrt {\frac{\sigma^2(\hat{e})}{e^2}} \]
+For example, a $\Theta$ sketch consisting of  $K$ samples provides an unbiased approximation $\hat{u}$ of the 
+number $u$ of unique elements in the stream with an RSE of $1/\sqrt{K-1}$.
+
+\item A \emph{probably approximately correct} sketch provides a result that estimates the correct result
+within some error bound $\epsilon$ with a failure probability bounded by some parameter $\delta$.  
+For example, a quantiles sketch approximates the $\phi$ quantile of a stream with  $n$ elements 
+by returning an element with rank between $(\phi-\epsilon)n$ and  $(\phi+\epsilon)n$ with 
+probability at least $1-\delta$.
+
+\end{enumerate} 
+
+\subsection{Relaxed semantics}
+\label{sec:rsemantics}
+
+For our concurrent sketches, we require that queries return a ``valid'' value reflecting some subset of the updates that have 
+already been processed. %, and possibly miss some others. 
+To define this behavior, we resort to the notion of \emph{relaxed semantics}  due to Henzinger et al.~\cite{Henzinger}.
+Specifically, we adopt here a variant of their {\emph{out-of-order}} relaxation,  
+which generalizes the notion of quasi-linearizabilty~\cite{Afek}.
+Intuitively, this relaxation allows a query to ``miss'' a bounded number of updates that precede it.
+It also allows bounded re-ordering of updates.
+
+More formally, 
+a \emph{history} of $o$ is the sequence of invocations (function calls, with parameters) and responses 
+(including return values) of its methods (update and query in our case). % arising in an  execution. 
+In a \emph{sequential history}, each invocation is immediately followed by its response.
+The \emph{sequential specification} of an object $o$ is its set of allowed sequential histories.
+A relaxed property for an object $o$ is an extension of its sequential specification to allow more behaviors.
+
+This approach requires $o$ to have a sequential specification, which is not the case when $o$'s guarantees 
+are probabilistic.
+Indeed, previous works have used relaxed semantics for deterministic objects like stacks~\cite{Henzinger} and priority 
+queues~\cite{alistarh} and not for randomized ones. 
+We therefore convert the sketches into deterministic objects by capturing their randomization in an external oracle. 
+In other words, we replace coin flips in the sketches algorithm $A_s$ by probes to an oracle;  given the oracle's output, 
+the sketches library behaves deterministically. We refer to 
+the set of histories arising in executions of this reference implementation as  $A_s^D$.
+We can then relax this sequential specification: 
+
+\begin{definition}[r-relaxation]
+%We say that a history is \emph{legal} for $A^D$ if it belongs to $A^D$'s sequential specification. 
+A sequential history $H$ is an \emph{r-relaxation} of a sequential history $H'$ if $H$ includes a subset of the 
+invocations in $H'$, and each invocation in $H$ is preceded by all but at most $r$ of the invocations that precede the 
+same invocation in $H'$.  The \emph{r-relaxation}  $A_s^r$ of  $A_s^D$ is the set of $r$-relaxations of 
+histories in $A_s^D$.  
+\end{definition}
+In other words, our relaxation allows method calls to ``overtake'' at most $r$ method calls that were invoked before them.
+Specifically, every query must return a result that reflects all but at most $r$ of the updates that occur before it. 
+Note in particular that every history in  $A_s^D$ is also trivially in  $A_s^r$ for every $r$.
+
+The impact of an $r$-relaxation on the sketch's error depends on the \emph{adversary}, which selects up to 
+$r$ updates to hide from every query. In an actual implementation, the operating system scheduler plays the role of the adversary,
+as it assigns updates to threads and schedules threads for execution.
+We consider two adversary models:   
+A \emph{weak adversary}  decides in advance which $r$ operations to omit from 
+every query, without observing the coin flips. 
+\inred{
+We will show that under such an adversary, the additional error induces by relaxing the sketch semantics
+is small.
+}
+A \emph{strong adversary}  on the other hand, may select which updates to hide from a query after learning 
+the coin flips. \inred{We will show that such an adversary may increase the error more significantly.} Fortunately, 
+such an adversary is not a particularly realistic model for scheduling delays occurring in a real operating system,
+where schedulers are generally oblivious to random coin flips used by the algorithm.
+
+\subsection{Correctness under concurrency}
+\label{sub:proveCorrect}
+
+So far, we have discussed correctness in sequential histories. We now consider concurrent histories 
+%namely, sequences of 
+%operation invocation and responses by different threads arising in a concurrent execution,
+where operations of different threads may overlap.  
+% 
+More specifically, we consider a system comprised of global (shared) state accessed by multiple threads. 
+Every thread takes \emph{steps} according to a deterministic \emph{algorithm} 
+defined as a state machine. Each step may change the global state.  
+An \emph{execution} of an algorithm is an alternating sequence of steps 
+by different threads and global states, where steps follow the algorithm. 
+The history of an execution $\sigma$, denoted ${\cal H}(\sigma)$, 
+is its subsequence of operation invoke and response steps.
+
+Correctness of concurrent algorithms is typically formulated using the notion of linearizability. 
+Intuitively, this means that operations in every concurrent execution $\sigma$ of a given implementation 
+of object $o$ see results that are consistent with some sequential history $H$ of $o$
+that includes the same operations, excludes some subset of pending operations,
+and preserves the \emph{real-time order} of $H$, i.e., 
+non-overlapping operations occur in the same order in both histories. 
+In this case, $H$ is called a \emph{linearization} of $\sigma$.
+
+However, Golab et al.~\cite{Wojciech} have shown that linearizable data structures  
+do not suffice in order to ensure correct behavior of randomized algorithms under concurrency:
+even a weak adversary can tamper with the low level scheduling in a way that 
+skews the probability distribution induced by an algorithm that uses the data structure. 
+In other words, if we replace a sequential sketch by a linearizable one in our randomized algorithm 
+(recall that the randomization in our model is in the oracle, which is part of the algorithm that 
+uses the sketch rather than the sketch) then the error bound will no longer be guaranteed.
+
+Fortunately, Golab et al.~\cite{Wojciech} also define a stronger property, {strong linearizabilty}, s.t.\
+even a strong adversary gains no additional power
+when a sequential object is replaced by a strongly linearizable one. 
+Intuitively,  it requires the adversary to select linearization points for operations 
+during the execution, which it cannot change  in retrospect. 
+Formally:
+% In addition, they also show in~\cite{Wojciech} that strong
+% linearizabilty is both local and composable.
+\remove{
+Meaning that in order to make sure that our concurrent sketch
+implementation preserves the sequential sketch's probabilistic
+properties we need to make sure that its deterministic version
+(i.e., with the oracle that produced random bit vectors outside
+the implementation) is strongly linearizable.
+}
+\begin{definition}[strong linearizabilty]
+A function $f$ mapping executions to  histories is \emph{prefix preserving} if
+for every  two executions $\sigma, \sigma'$ s.t.\ $\sigma$ is a prefix of $\sigma'$,  $f(\sigma)$ is a prefix of $f(\sigma')$.
+
+An algorithm $A$ is a strongly linearizable implementation of $o$
+if there is a prefix preserving function $f$ that maps every 
+execution $\sigma$ of $A$ to a linearization $H$ of $\sigma$.
+\end{definition}
+
+\remove{ 
+
+ Consider a deterministic concurrent algorithm $A$, denote by
+$A_c$ the set of all $A$'s possible runs, and denote by $A_s$ the set of
+all sequential runs that satisfies $A$'s sequential
+specification. 
+
+Intuitively, in strongly linearizable implementations the
+adversary can't change linearizable points in the future.
+Meaning that whenever it chooses the linearizable point of an
+operation $op$ it has to decide for each concurrent with $op$
+operation $op'$ whether its linearizable point is before $op$'s
+or after.
+}
+ 
+ \paragraph{Putting it all together.} 
+ 
+To prove the correctness of a concurrent sketch algorithm
+$A_c$ that parallelizes a correct sequential sketch  $A_s$, we
+ follow the  roadmap below:
+
+\begin{enumerate}
+  
+  
+  \item Define $A_s$'s sequential specification, $A^D_s$, as   the set of histories arising in executions of the  
+  deterministic   version of  $A_s$ in which an external oracle provides the random bits.  
+
+   \item Consider $A^D_s$'s $r$-relaxation, $A^r_s$. 
+   Analyze its error  under a weak or strong adversary. 
+  
+  \item Prove strong linearizabilty of $A_c$  with respect to $A^r_s$. 
+  By~\cite{Wojciech}, this implies that the error bounds of  $A^r_s$ are preserved in $A_c$.
+  
+%  \item By Wojciech et al~\cite{Wojciech} we know that the
+ % probabilistic properties of $A_s$ are preserved in $A_c$.  
+    
+\end{enumerate}
+\remove{ 
+
+\noindent Note that step 3 is the only step that we are required
+to prove.
+
+
+TODO: figure?
+
+TODO: Think about a general scheme that captures both our
+algorithm and we can prove is strong linearizable.
+
+\textbf{Comment: I do not know how to bound the error in the
+worst case since r-relaxed runs change the summaries internal structure
+and thus can potentially add more error than just missing k
+values.}
+
+
+
+\subsection{General implementation approach}
+\label{sub:approach}
+
+% Goals and challenges
+Our goal is to build data sketches that (1) allow queries to be processed while the sketch is being built; and (2) 
+support parallel construction of the sketch via multiple threads.
+The challenge in achieving (1) is that a sketch update is not always atomic, and intermediate 
+states of the sketch may be bogus, leading to gross estimation errors. 
+For this reason, some applications that use sketches synchronize all access to them, which, as we show below, is detrimental to performance (in our experiment, reducing throughput threefold). 
+The challenge with (2) is again, the need to support concurrent queries. 
+Although data sketches are naturally amenable to parallel construction via separate threads (or processes) that each summarize a substream followed by a union operator that merges all the substream sketches, this approach 
+does not allow queries to be processed in real-time before the sketch is  merged. 
+
+
+
+
+%data structure
+While sketches are usually not defined and treated as such, we
+prefer to look on sketches as probabilistic append-only data
+structures.
+Every sketch has an API to append data item to the summary and
+an API to read statistics on data items appended so far. 
+In Section~\ref{sec:model} we formally define sketches
+sequential specification, and a variation of a linearizabilty
+property that takes the allowed error into account.
+%a slightly weaker linearizabilty
+%property that allows us to deal with infinite streams of data.
+%
+Now once we consider sketches as data structures with sequential
+specifications, and we define how a sketch should behave when
+accessed concurrently by many threads, we can talk about
+concurrent sketches.
+
+%The price of synchronization
+However, in contrast to traditional concurrent data-structures,(
+e.g., skiplists and B-trees) sketches' algorithms require very
+little computation.
+So, we should be very careful with the the cost we add
+for synchronization. 
+For example, as mentioned above, our measurements show that
+adding even a single fence per operation in a sequential
+execution decreases the throughput by a factor of 3.
+Therefore, in order to get a scalable implementation we clearly
+have to use as little synchronization as possible.
+
+%Our approach - localirty
+Our approach is strongly based on locality.
+The common idea for all sketches is to make as much local work
+as possible and use very light synchronization to merge it. 
+We let threads process data items locally and only once in a
+while we propagate their local state to a dedicated background
+thread that merge local states with the shared one.
+Thanks to the sketches semantics and structure we are able to do
+it with a little extra memory cost and sometimes without
+increasing the error at all.
+Since sketches algorithms use randomized mechanisms to filter
+data items, it is very nature to do it in parallel and sometimes
+merge the results.
+Note that by giving each thread to work locally and using a
+dedicated thread for propagation, we also exploit better the
+cache locality and pay less during fences. 
+
+% \subsection{General Scheme}
+% \label{sub:generalScheme}
+% 
+% 
+% 
+% 
+% Given a sketch $sk$ with a sequential implementation $S$ such
+% that every run of $S$ satisfies $sk$'s sequential specification,
+% we give a general scheme to create a concurrent version of
+% $S$ that satisfies \emph{r-perforated linearization}.
+% First, extend $S$ to support concurrent reads, and denote this
+% implementation by $S'$.
+% Then, a generic structure that includes (1) a shared
+% instance of $S'$; and (2) local data structures $L_1,.. L_n$
+% that buffer operations to be added to $S'$.
+% To satisfy \emph{r-perforated linearization} ensure that ($A_1$)
+% all buffer contain no more than k operations together; and
+% ($A_2$) the propagation from each $L_i$ to $S'$ is equivalent to
+% running the sequence of operations masked by $L_i$ on $S'$.
+% In the following sections we present two concurrent algorithms
+% using the above structure and prove that they satisfy conditions
+% $A_1$ and $A_2$.
+% 
+% TODO:
+% 
+% Axioms
+% 
+% figure
+%  proof
+% 
+% 
+}

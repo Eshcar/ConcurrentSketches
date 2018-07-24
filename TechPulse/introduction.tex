@@ -1,0 +1,110 @@
+
+\section{Introduction}
+
+%\subsection{Motivation and goals}
+
+% stream processing for RT analytics
+Real-time analytics are becoming increasingly prevalent in many businesses. 
+Examples include Google's F1~\cite{Shute2013}, which powers its AdWords
+%\footnote{\url{https://www.google.com/adwords/}}
+business, and Yahoo's Flurry~\cite{flurry} --
+%\footnote{\url{https://developer.yahoo.com/flurry/docs/analytics/}},
+the technology behind Mobile Developer Analytics.
+\inred{Other application examples?}
+Such systems need to process massive data streams and answer queries about them in real-time.
+% examples
+A common query, for example, is estimating the number of \emph{unique elements} in a long stream, which 
+can be used to count how many different users access a particular web page or application. 
+A second example is a \emph{quantiles} estimator, which can be used, for example, to  answer questions like  \emph{what percentage of user sessions end within one minute?} or \emph{what is the median session time?}
+
+% Sketches
+In order to serve such queries, analytics engines use 
+\emph{data sketches}, or \emph{sketches} for short. A sketch is essentially 
+a succinct summary of a long stream. 
+Sketches are built in a single pass over the stream via sampling or by applying a filter 
+that retains a small subset  of the stream elements. 
+%They are designed to take up a small memory footprint, since analytics engines 
+%often keep tens or hundreds of thousands and sometimes even millions of 
+%sketches in memory~\cite{Druid}.
+% Sketches are fast
+Due to the massive scale of the incoming data,   library functions producing sketches
+are optimized to be extremely fast, often digesting millions of stream elements per second~\cite{sketchesLibrary}. 
+
+%For example, the $\Theta$ sketch in the Java Sketches Library \inred{add reference} 
+%estimates the number of unique elements in a stream; it can process millions of stream 
+%elements a second. 
+
+ % Missing: r-w concurrency 
+ Analytics engines need to answer real-time queries while  stream data continues to flow in.
+ One way this is done 
+today is by building sketches in epochs, and querying the sketch only after
+ the epoch ends. An alternative approach is using locks to prevent concurrent access to a sketch.
+ For example, in the Java Sketches Library~\cite{sketchesLibrary},  an 
+attempt to query a sketch  while it is being updated  may encounter an inconsistent
+intermediate state, leading to a gross estimation error. Therefore, applications like Druid~\cite{Druid}
+currently use sketches conservatively within a \emph{synchronized} block.
+% and queries directed to a sketch must wait  for its construction to complete. 
+Our first goal in this paper is to eliminate such waiting, and to allow queries to proceed 
+concurrently with stream updates. 
+
+% MIssing: w-w concurrency
+In addition to the required concurrency among queries and updates,
+it is also desirable to allow
+concurrency among update threads in order to expedite the sketch building process on multi-core platforms. 
+The common approach today is to build separate sketches from substreams, 
+and then merge them via a dedicated union operation~\cite{multi-KMV}. 
+In this approach, queries cannot be served before the final union completes. 
+Our second goal is therefore to allow multiple threads to update a common, 
+queryable sketch. The challenge is to do so without slowing down the update threads,
+given that access to shared data requires  synchronization via costly memory fences 
+and shared data updates can cause frequent invalidations in L1 caches, severely impacting performance
+\inred{[[ do we have any numbers?]]}. 
+
+
+% This paper
+%In this paper 
+We present a general approach for building concurrent sketches that
+constantly reflect all data processed by multiple update threads, 
+and serve queries at any time. % during the stream processing. 
+ % Basic idea for parallelizing
+Our  approach employs multiple worker threads that buffer sketches of bounded-size substreams in thread-local memory, while a dedicated helper thread 
+periodically \emph{propagates} these local buffers into a common data structure via a union-like operation.
+ Reducing data contention and the frequency of synchronization between the worker threads and the propagator is instrumental for achieving good performance. Queries are served from the common data structure, and are carefully 
+ designed to take a \emph{consistent snapshot} of this data structure in case it is updated in parallel with them.
+
+We implement our approach for two popular sketches in the Java Sketches Library -- $\Theta$~\cite{Theta},
+which estimates the number of unique elements in a stream, and quantiles~\cite{quantiles}.
+We analyze the sketches' error bounds
+%worst-case error an adversarial scheduler can induce, 
+and experimentally show the algorithms' high performance and scalability. 
+ % Experiments
+\inred{We have good performance results and linear speedup (quantify).}
+  
+%\subsection{Overview of results}
+
+ % Relaxed semantics
+ The correctness criterion for our concurrent sketches is a flavor of 
+ \emph{relaxed consistency} due to Henzinger et al.~\cite{Henzinger}    
+ %specifically, a restricted form of their   \emph{out-of-order} relaxation 
+ that allows operations to ``overtake'' some of the updates that precede them.  
+ For example, a query may return a result that reflects all but a bounded number of the updates
+ that precede it. 
+ While relaxed semantics were previously used for traditional data structures like stacks~\cite{Henzinger} and priority queues~\cite{alistarh}, we believe that they are a natural fit for data sketches. 
+First, sketches are typically used to summarize streams that  arise from multiple real-world sources  
+and are collected over a network with variable delays. Thus, even if the sketch ensures strict semantics, 
+queries might miss some real-world events that occur before them, which is not qualitatively different than the  relaxed sketch. Second, sketches are inherently approximate, even when they are strict. 
+Relaxing their semantics therefore makes sense, as long as it does not excessively increase the expected error. 
+
+% correctness roadmap: derandomize,  strong serializability, Adversary model,
+Proving the concurrent sketches' correctness goes through a number of steps. First, to provide a sequential specification for a given sketch, we need to de-randomize its behavior. We do this by delegating the random coin flips to an oracle, and considering the set of executions of the deterministic
+sequential sketch implementation that uses this oracle
+as part of its environment.
+Second, we relax the sequential specification to allow bounded reordering of operations.
+Next, because our concurrent sketches are used within randomized algorithms, 
+it is not enough to prove their linearizability; rather, 
+we prove that the concurrent implementations comply with the \emph{strong linearizability} notion of~\cite{strongLinearizability} with respect to the relaxed de-randomized sequential specification. 
+%
+Finally, 
+we analyze the error of the relaxed sketch under random coin flips, with an adversarial scheduler that may delay operations in a way that maximizes the error. This requires careful reasoning about the interplay between different concurrent executions and error probabilities. \inred{And we show something interesting about it, hopefully.}
+
+
