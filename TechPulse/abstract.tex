@@ -1,15 +1,14 @@
 \begin{abstract}
-Sketches are algorithms extracting information from a stream of data in a single pass. A query then generates approximate result with bounded error. Sketches are implemented as small efficient data structures using various randomization techniques. Despite the fact that they are designed to be used in big data systems for real time processing their current implementation is not thread-safe; each sketch object can be accessed only by a single thread at a time.
-Our goal is to design  sketches that (1) allow queries to be processed while the sketch is being built; and (2) 
-support parallel construction of the sketch via multiple threads.
-The challenge is that a sketch update is not always atomic, and intermediate 
-states of the sketch may be bogus, leading to gross estimation errors. 
-For this reason, some applications that use sketches synchronize all access to them, which, is detrimental to performance (in our experiment, reducing throughput threefold). 
-An approach with multiple threads, each summarizing a sub-stream followed by a union operator that merges all the sub-stream sketches
-does not allow queries to be processed in real-time before the sketch is  merged.
 
-We present a general approach for building concurrent sketches that
+Big data analytics often needs to answer queries capturing salient properties of large data streams, for example, counting the number of distinct elements in a stream, 
+or estimating the median value -- and more generally, quantiles.   
+Data sketches are succinct summaries capturing pertinent information from  data streams, in a way that allows answering such queries  bounded error. 
+Despite their popularity in today's analytics engines, existing 
+implementations are not thread-safe; that is, each sketch object can be accessed  by at most one thread at a time.
+In this work we design concurrent sketches that (1) allow queries to be processed while the sketch is being built; and (2) 
+support parallel construction of the sketch via multiple threads.
+We present a general approach for building concurrent data sketches that
 constantly reflect all data processed by multiple update threads, 
-and serve queries at any time. We focus on concurrent implementations for the theta (count distinct) and quantiles sketches. 
+and serve queries at any time. We illustrate our approach for  the theta (count distinct) and quantiles sketches. 
 Experiments show the algorithms' high performance and scalability in write-only and mixed read-write workloads.
 \end{abstract}

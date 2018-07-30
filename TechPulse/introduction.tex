@@ -5,7 +5,7 @@
 
 % stream processing for RT analytics
 Real-time analytics are becoming increasingly prevalent in many businesses. 
-Examples include Yahoo's Flurry~\cite{flurry} --
+Examples include Yahoo's Flurry~\cite{flurry},  
 %\footnote{\url{https://developer.yahoo.com/flurry/docs/analytics/}},
 the technology behind Mobile Developer Analytics, and Digits Yahoo Corporate-Wide dashboard for monitoring KPIs and traffic trends%at different granularities
 ~\cite{digits},
@@ -60,31 +60,31 @@ Our second goal is therefore to allow multiple threads to update a common,
 queryable sketch. The challenge is to do so without slowing down the update threads,
 given that access to shared data requires  synchronization via costly memory fences 
 and shared data updates can cause frequent invalidations in L1 caches, severely impacting performance. 
-Figure~\ref{fig:lockBased} compares the throughput of the
-sequential Theta sketch implementation given in DataSketch with
-and without a lock.
-The cost of acquiring a lock in every
-operation on the sketch is very high since the sketches are
+Figure~\ref{fig:lockBased} compares the throughput of two 
+%  the
+sequential sketch implementations given in DataSketch with
+and without a lock. We see that 
+the cost of acquiring a lock  is  high, since  sketches are
 inherently fast structures.
 
-\begin{figure*}[t!]
+\begin{figure}[t!]
     \centering
-    \begin{subfigure}[t]{0.49\textwidth}
+    \begin{subfigure}[t]{0.49\columnwidth}
         \centering
-        \includegraphics[width=3.2in]{images/seqTheta}
+        \includegraphics[width=1.6in]{images/seqTheta}
         \caption{Theta sketch}
         \label{fig:LockIsBadTheta}
     \end{subfigure}%
     ~ 
-    \begin{subfigure}[t]{0.49\textwidth}
+    \begin{subfigure}[t]{0.49\columnwidth}
         \centering
-        \includegraphics[width=3.2in]{images/seqQuantiles}
+        \includegraphics[width=1.6in]{images/seqQuantiles}
         \caption{Quantile sketch}
         \label{fig:LockIsBadQuantiles}
     \end{subfigure}
     \caption{Throughput of sequential sketch vs. lock-based sketch running a single write-only thread.}
     \label{fig:lockBased}
-\end{figure*}
+\end{figure}
 
 
 
@@ -99,11 +99,11 @@ periodically \emph{propagates} these local buffers into a shared data structure 
  Reducing data contention and the frequency of synchronization between the worker threads and the propagator is instrumental for achieving good performance. Queries are served from the shared data structure, and are carefully 
  designed to take its \emph{consistent snapshot} in case it is updated in parallel with them.
 
-We implement our approach for two popular sketches in the Java Sketches Library -- $\Theta$~\cite{Theta},
+We implement our approach for two popular sketches in the Java Sketches Library -- Theta~\cite{Theta},
 which estimates the number of unique elements in a stream, and quantiles~\cite{quantiles}.
 %worst-case error an adversarial scheduler can induce, 
-Experiments show the algorithms scales almost linearly: with 28 threads updates throughput is order of magnitude greater than with a single threads; 
-read throughput is 3 orders of magnitude greater than the read throughput of the lock-based implementation.  
+Experiments show the algorithms scales almost linearly: with 28 threads, update throughput is an order of magnitude greater than with a single threads, while the 
+read throughput is 3 orders of magnitude greater than that of a lock-based implementation.  
 
 
  
