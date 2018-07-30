@@ -6,8 +6,8 @@
 
 We implement our concurrent sketches and evaluate their
 performance.
-Our implementation for both concurrent sketches is based on the
-algorithms implemented in DataSketches~\cite{}, which is a Java
+Our implementations are based on the
+code in DataSketches~\cite{sketchesLibrary}, which is a Java
 open source library of stochastic streaming algorithms.
 %We implemented our both concurrent sketches inside
 %DataSketches~\cite{}, which is a Java open source library
@@ -16,20 +16,11 @@ In both cases (quantiles and theta), we build our concurrent
 sketch on top of the sequential sketch implementation, which was
 already very optimized in the library.
 
-In Section~\ref{sub:imp} we give some of the implementation
-details.
-In Section~\ref{sub:setup} we describe the experiment setup.
-In Section~\ref{sub:thetaExp} we compare our Concurrent Theta
-sketch with the sequential implementation given in
-DataSketches library, and in Section~\ref{sub:quantilesExp} we do
-it for the quantiles sketch. 
-
-
 \subsection{Implementation}
 \label{sub:imp}
 
 To avoid false sharing, unnecessary cash misses, and memory
-flashes we let each worker thread to locally maintain its private
+flushes we let each worker thread to locally maintain its private
 part of the sketch.
 One way to achieve this is by using thread local memory.
 However, we found that accessing thread local memory per
