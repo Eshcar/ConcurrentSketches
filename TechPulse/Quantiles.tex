@@ -36,7 +36,7 @@ This process is called \emph{zip}.
 
 The algorithm maintains $\lfloor log(|A|/k) \rfloor$ weighted
 levels, where each level is an array of size $k$ that either contains $k$ ordered
-items or invalid (also called empty) (see Figure~\ref{fig:quantilesMerge}.
+items or invalid (see Figure~\ref{fig:quantilesMerge}).
 The weight of level $i$ is $2^{i-1}$.
 In addition to the levels arrays, the algorithm uses a
 \emph{bitPattern} variable that indicates what levels are valid,
@@ -44,23 +44,23 @@ and a \emph{base Buffer} of size $2k$, which is filled with items
 from the stream.
 Every time the baseBuffer is full, it is propagated (in place) to
 the levels arrays in the following way:
-First we use the bitPattern to find the first invalid level in
-the levels array. 
-We call this level the \emph{target} level, and at the end of
-the propagation this level will become valid, while all the the
-level beneath it will be invalid.
-Next, we sort and zip the base buffer (with equal probability,
+First find using the bitPattern the first invalid level in
+the levels array, 
+call it the \emph{target} level. At the end of
+the propagation this level becomes valid, while all the
+level beneath it become invalid.
+Next, sort and zip the base buffer (with equal probability,
 pick either the even or the odd items in the sorted order) into
 the target level.
-And then we repeat the following process from level $i=1$ to the
+Repeat the following process from level $i=1$ to the
 last level that precedes the target level:
 Mergesort level $i$ with what is currently stored in the target
 level into the base buffer, and then zip the base buffer into the
 target level.
-Finally, update the bitPatternt to indicate that all the target
-level is now valid while all the level beneath are not.
+Finally, update the bitPatternt to indicate that the target
+level is now valid while all the level beneath it are not.
 
-Note that the weight of level $i+1$ is twice the weight of level
+The weight of level $i+1$ is twice the weight of level
 $i$ because it was zipped one more time, and thus it
 ``represents'' twice of the number of items ``represented'' in
 level $i$.
@@ -72,13 +72,13 @@ contains all the items from all the valid levels, and (2) an
 array of weights, called \emph{Warr}, that maps every item in
 Iarr to its weight.
 Then, to get the $~\phi - quantile$ of a stream $A$
-we need to find the first index $ind$ in $Warr$ such that the
+find the first index $ind$ in $Warr$ such that the
 sum of all weights in $Warr$ till index $ind$ is $\lfloor \phi |A|
-\rfloor$, and return $Iarr[ind]$.
-Figue~\ref{fig:quantilesMerge} illustrates the algorithm.
-Since it is not the focus of our paper we omit the error analysis
-of the algorithm, and refer the interested reader to~\cite{} for
-the proof and more details.
+\rfloor$, and return $Iarr[ind]$. The algorithm is illustrated in
+Figure~\ref{fig:quantilesMerge}.
+%Since it is not the focus of our paper we omit the error analysis
+%of the algorithm, and refer the interested reader to~\cite{} for
+%the proof and more details.
 
 \begin{figure}[tb]
     \centering
@@ -91,60 +91,52 @@ the proof and more details.
 
 \subsection{Concurrent Algorithm}
 
-An efficient concurrent thread allows for as much work as possible to be executed in parallel.
+An efficient concurrent thread would allow for as much work as possible to be executed in parallel.
 This is not an easy task since the propagation process (from the base buffer to levels
 array), which requires most of the work in the algorithm, is
-inherently very sequential.
-An alternative option is to decrease the propagation rate without changing
-the value of $K$. 
-In other words, instead of propagating every $2K$ items we can
-do it every $2^{i}K$, where $i \geq 0$ is a parameter that
-impacts accuracy (as described below).
+inherently sequential.
+Our algorithm decreases the propagation rate without changing
+the value of $K$: instead of propagating every $2K$ items we can
+do it every $2^{L}K$, where $L \geq 0$ is a parameter that
+impacts accuracy.
 This way we amortized the propagation cost and thus increase
 throughput.
 
-Our approach given in  Algorithm~\ref{alg:concurrent-quantile} is to exploit locality and minimize
-synchronization.
-As in the concurrent Theta sketch, the idea is to have one propagation
+The concurrent quantile algorithm exploits locality and minimizes
+synchronization between a single propagation
 background thread and many worker threads.
 Every worker thread maintains a local sketch with bounded number
 of levels; each level stores $b$ items. 
 Every time the local sketch fills its last level, and it is the only valid level the content of the last level is propagated to the
-shared sketch via the background thread.
-For a sketch with $i$ local levels, it happens every $2^ib$
-items from the stream (See Figure~\ref{cocurrentQuntiles}).
-
-
+shared sketch via the background thread (See Figure~\ref{cocurrentQuntiles}).
 
 The optimal number of local levels depends on the number of
 concurrent worker threads.
 Since  the propagation time is constant more worker threads means each thread gets
 less help from the background thread--we need to make sure each thread needs help
-less frequently.
-For better scalability we need to find the balance between increasing the number of
-local levels with the number of worker threads: too much levels means more delay in getting fresh results, not enough levels cause the propagation thread to become a bottleneck.
+less frequently by increasing the number of
+local levels. There is a balance point: too much levels means more delay in getting fresh results, not enough levels cause the propagation thread to become a bottleneck.
 
 After triggering propagation to the shared sketch,
-a worker thread starts filling its local sketch again, hoping the
-propagation process is faster than the filling process.
+a worker thread starts filling its local sketch again.
 As in the Theta sketch, the synchronization between the
 propagation thread and a worker thread $t_i$ is done over a
 single atomic variable $P_i$.
 
-To propagate level $i$ from a local sketch to the shared sketch,
+To propagate level $L$ from a local sketch to the shared sketch,
 the propagation thread applies the mechanism of the
 sequential quantiles sketch with the following
 change:
 Instead of starting from zipping the base buffer
-into the target level, it starts from level $i$.
-If level $i$ in the shared sketch is valid, the propagation
-thread merges it (via merge sort) with the local level $i$ into
+into the target level, it starts from level $L$.
+If level $L$ in the shared sketch is valid, the propagation
+thread merges it (via merge sort) with the local level $L$ into
 the base buffer, and continues the propagation to the next level
 as before.
-Otherwise, it simple copies the local level $i$ to the shared level
-$i$.
 The target buffer in this case is the first invalid level that is
-not smaller than $i$.
+not smaller than $L$.
+Otherwise, it simple copies the local level $L$ to the shared level
+$L$.
 
 Recall that in order to read (getQuantiles), readers build an
 auxiliary object based on the levels array and the bitPattern
@@ -152,45 +144,43 @@ that describes it.
 Therefore, to be able to read concurrently with
 background propagation, a reader must obtain a snapshot of the
 levels array.
-We solve this with the double successful collect technique~\cite{}.
-First, we define an atomic bitPatern so
+We solve this with the \emph{double} (successful) \emph{collect} technique~\cite{}.
+The bitPatern is atomic so
 that a propagation is visible to all readers after the
-bitPattern is updated.
-Second, a reader repeatedly tries to obtain a consistent view of
+it is updated.
+To get a snapshot a reader repeatedly tries to obtain a consistent view of
 the levels array: it reads the bitPattern, then the levels array,
 and then the bitPattern again.
 If the bit pattern did not change between the two reads, the
 reader has a consistent view.
 Otherwise, it tries again.
-
-Note that during the propagation process, the background
+In parallel,during the propagation process, the background
 thread may read many levels, but write only to the target level,
 which is invalid at this point.
 Therefore, a reader can be sure that the valid levels it reads
-between two identical reads of the bitPatern are consistent
-even though the background thread is
-propagating in parallel.
-In addition, note that a reader do not have to read all valid
-levels each time it fails to obtain a successful double collect.
-Since a valid level may become invalid and then valid again
-(with different items) only after a higher invalid level becomes
-valid, if two sequential reads of the bitPatern has a
-common suffix, the reader must read only the valid levels in
-the different prefix of the later bitPattern read. 
-It is guaranteed that the valid levels in the suffix are
-unchanged.
+between two identical reads of the bitPatern are consistent.
+%even though the background thread is propagating in parallel.
+%In addition, note that a reader do not have to read all valid
+%levels each time it fails to obtain a successful double collect.
+%Since a valid level may become invalid and then valid again
+%(with different items) only after a higher invalid level becomes
+%valid, if two sequential reads of the bitPatern has a
+%common suffix, the reader must read only the valid levels in
+%the different prefix of the later bitPattern read. 
+%It is guaranteed that the valid levels in the suffix are unchanged.
 
-The reads in this algorithm may suffer from starvation due to repeated changes of the bitPatern which makes it impossible for the readers to get a consistent snapshot..
+The reads in this algorithm may suffer from starvation due to repeated changes of the bitPatern which prevent the readers from reading a consistent snapshot.
 In practice, however, the propagation time (and thus
 the time between bitPattern changes) is longer when the target
-level is higher, and every once in a while the background thread must
-propagate to a high level.
+level is high.
+%and every once in a while the background thread must propagate to a high level.
 So, eventually the propagation is long enough for
 all the reader to obtain a snapshot of the levels array. 
-The experiments we ran, show that the readers are able to do it
+The experiments we run, show that the readers are 
 much faster, and the snapshot time is negligible with respect to the time it takes to
 build the auxiliary object.
 
+\remove{
 \begin{algorithm*}[tb]
 \small
 \begin{multicols}{2}
@@ -263,7 +253,7 @@ build the auxiliary object.
 \caption{Concurrent Quantile sketch algorithm. Maximum level in local sketches is $L$.}
 \label{alg:concurrent-quantile}
 \end{algorithm*}
-
+}
 
 \begin{figure}[tb]
     \centering
