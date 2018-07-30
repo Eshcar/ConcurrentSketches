@@ -8,8 +8,9 @@ A sketch $S$ supports three main API methods --
 \item[$S$.update($a_i$)] processes stream element $a_i$; and 
 \item[$S$.query(arg)] returns the function estimated by the sketch, for example, the number of unique elements; 
  takes an optional argument, e.g., the requested quantile.
- \item[$S$.union($S'$)] merges sketches $S$ and $S'$ into $S$; that is, if $S$ initially represents stream A and $S'$ 
- represents stream $A'$, then after this call, $S$ represents the union of the two streams. 
+ \item[$S$.union($S'$)] merges sketches $S$ and $S'$ into $S$.
+ % that is, if $S$ initially represents stream A and $S'$ 
+ %represents stream $A'$, then after this call, $S$ represents the union of the two streams. 
  Sketches that support this operator are called \emph{mergeable}.
 \end{description}
 
@@ -28,7 +29,7 @@ as
 For example, a $\Theta$ sketch consisting of  $K$ samples provides an unbiased approximation $\hat{u}$ of the 
 number $u$ of unique elements in the stream with an RSE of $1/\sqrt{K-1}$.
 }
-\item A \emph{probably approximately correct} sketch provides a result that estimates the correct result
+\item A \emph{probably approximately correct}'s  result  estimates the correct result
 within some error bound $\epsilon$ with a failure probability bounded by some parameter $\delta$.  
 %For example, a quantiles sketch approximates the $\phi$ quantile of a stream with  $n$ elements 
 %by returning an element with rank between $(\phi-\epsilon)n$ and  $(\phi+\epsilon)n$ with 
