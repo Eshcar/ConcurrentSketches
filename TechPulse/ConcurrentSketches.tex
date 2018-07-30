@@ -1,5 +1,6 @@
-\documentclass{sig-alternate}
-%\documentclass[twocolumn,10pt, a4paper]{article}
+%\documentclass{sig-alternate}
+\documentclass[twocolumn,10pt]{article}
+\usepackage{times}
 
 \usepackage{graphicx,url,color}
 \usepackage[noend]{algpseudocode}
@@ -20,6 +21,44 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+
+
+\oddsidemargin 4.5pc
+\evensidemargin 4.5pc
+\advance\oddsidemargin by -1in  % Correct for LaTeX gratuitousness
+\advance\evensidemargin by -1in % Correct for LaTeX gratuitousness
+\marginparwidth 0pt             % Margin pars are not allowed.
+\marginparsep 11pt              % Horizontal space between outer margin and
+                                % marginal note
+
+                                % Top of page:
+\topmargin 4.5pc                % Nominal distance from top of page to top of
+                                % box containing running head.
+\advance\topmargin by -1in      % Correct for LaTeX gratuitousness
+\headheight 0pt                 % Height of box containing running head.
+\headsep 0pt                    % Space between running head and text.
+                                % Bottom of page:
+\footskip 30pt                  % Distance from baseline of box containing foot
+                                % to baseline of last line of text.
+\advance\topmargin by -37pt     % Leave 37pt above text for headers
+\headheight 12pt                % Height of box containing running head.
+\headsep 25pt                   % Space between running head and text.
+
+\textheight 666pt       % 9 1/4 column height
+\textwidth 42pc         % Width of text line.
+                        % For two-column mode:
+\columnsep 2pc          %    Space between columns
+\columnseprule 0pt      %    Width of rule between columns.
+\hfuzz 1pt              % Allow some variation in column width, otherwise it's
+                        % too hard to typeset in narrow columns.
+\newcommand{\ignore}[1]{}
+
+
+\usepackage{subcaption}
+\usepackage{microtype}
+
+\bibliographystyle{abbrv}
+
 \newcommand{\inred}[1]{{\color{red}{#1}}}
 \newcommand{\inblue}[1]{{\color{blue}{#1}}}
 \newcommand{\remove}[1]{}
@@ -38,25 +77,16 @@
 \title{Fast Concurrent Data Sketches} 
 %with Lightweight Synchronization}
 
-\numberofauthors{5}
+
 \author{
- \alignauthor Alexander Spiegelman\\
-   \affaddr Technion\\
-   \email{sashas@tx.technion.ac.il}
- \alignauthor Edward Bortnikov\\
-    \affaddr Yahoo Research\\
-    \email{ebortnik@oath.com}
- \alignauthor{Eshcar Hillel}\\
-   \affaddr Yahoo Research\\
-   \email{eshcar@oath.com}
-\and
- \alignauthor{Idit Keidar}\\
-   \affaddr Technion, Yahoo Research\\
-   \email{idish@ee.technion.co.il}
-\alignauthor Lee Rhodes\\
-    \affaddr Yahoo \\ 
-    \email{lrhodes@oath.com}
+Alexander Spiegelman\footnotemark[1] \ 
+Edward Bortnikov\footnotemark[2]  \
+Eshcar Hillel\footnotemark[2] \ 
+Idit Keidar\footnotemark[1]\footnotemark[2] \ 
+Lee Rhodes\footnotemark[2]\\ 
+\footnotemark[1] Technion\ \ \footnotemark[2] Yahoo Research, Oath
 }
+
 
 \date{}
 
