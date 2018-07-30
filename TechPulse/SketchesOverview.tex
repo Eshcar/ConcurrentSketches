@@ -3,7 +3,7 @@
 
 
 % API 
-A sketch $S$ supports two API methods -- 
+A sketch $S$ supports three main API methods -- 
 \begin{description}
 \item[$S$.update($a_i$)] processes stream element $a_i$; and 
 \item[$S$.query(arg)] returns the function estimated by the sketch, for example, the number of unique elements; 
@@ -14,24 +14,25 @@ A sketch $S$ supports two API methods --
 \end{description}
 
 % Sequential specification
-Today, sketches are used sequentially, so that the entire stream $A = a_1, a_2, \dots a_n$ is processed 
+Today, sketches are used sequentially; the entire stream $A = a_1, a_2, \dots a_n$ is processed 
 and only then the sketch is queried. $S$.query(arg) then returns an estimate of the desired function 
 on the entire stream. 
 Sketches use randomization and their accuracy is defined in one of two ways:
 \begin{enumerate}
 \item An \emph{unbiased} sketch provides an estimate  $\hat{e}$ whose expectation is the correct quantity $e$ 
 (for example, the number of unique elements in the stream in a $\Theta$ sketch).  
+\remove{
 The \emph{Relative Standard Error (RSE)} is then derived from the variance $\sigma^2(\hat{e})$  of the estimate
 as 
 \[ \sqrt {\frac{\sigma^2(\hat{e})}{e^2}} \]
 For example, a $\Theta$ sketch consisting of  $K$ samples provides an unbiased approximation $\hat{u}$ of the 
 number $u$ of unique elements in the stream with an RSE of $1/\sqrt{K-1}$.
-
+}
 \item A \emph{probably approximately correct} sketch provides a result that estimates the correct result
 within some error bound $\epsilon$ with a failure probability bounded by some parameter $\delta$.  
-For example, a quantiles sketch approximates the $\phi$ quantile of a stream with  $n$ elements 
-by returning an element with rank between $(\phi-\epsilon)n$ and  $(\phi+\epsilon)n$ with 
-probability at least $1-\delta$.
+%For example, a quantiles sketch approximates the $\phi$ quantile of a stream with  $n$ elements 
+%by returning an element with rank between $(\phi-\epsilon)n$ and  $(\phi+\epsilon)n$ with 
+%probability at least $1-\delta$.
 
 \end{enumerate} 
 
@@ -43,13 +44,14 @@ probability at least $1-\delta$.
  For example, a query may return a result that reflects all but a bounded number of the updates
  that precede it. It also allows bounded re-ordering of updates.
 %While relaxed semantics were previously used for traditional data structures like stacks~\cite{Henzinger} and priority queues~\cite{alistarh}, 
-We believe that relaxed semantics are a natural fit for data sketches. 
-First, sketches are typically used to summarize streams that  arise from multiple real-world sources  
+We believe that relaxed semantics are a natural fit for data sketches
+as they are inherently approximate and typically summarize streams that  arise from multiple real-world sources  
 and are collected over a network with variable delays. Thus, even if the sketch ensures strict semantics, 
-queries might miss some real-world events that occur before them, which is not qualitatively different than the  relaxed sketch. Second, sketches are inherently approximate, even when they are strict. 
+queries might miss some real-world events that occur before them.
+%, which is not qualitatively different than the  relaxed sketch. Second, sketches are inherently approximate, even when they are strict. 
 Relaxing their semantics therefore makes sense, as long as it does not excessively increase the expected error. 
 % correctness roadmap: derandomize,  strong serializability, Adversary model,
-Proving the concurrent sketches' correctness and analyzing the sketches' error bounds
+With that, proving the concurrent sketches' correctness and analyzing the sketches' error bounds
 are out of the scope of this paper.
 
 \remove{ 

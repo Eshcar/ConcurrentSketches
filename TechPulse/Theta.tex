@@ -4,8 +4,11 @@
 Our first example is a $\Theta$ sketch implemented using  the 
 \emph{K Minimum Values  (KMV)} algorithm~\cite{KMV}, 
 which estimates the number of unique items in a data stream. 
-We first overview the sequential  sketch in Section~\ref{ssec:theta-overview}, 
-and then explain how we parallelize it in Section~\ref{ssec:concurrent-theta}.
+A $\Theta$ sketch consisting of  $K$ samples provides an unbiased approximation $\hat{u}$ of the 
+number $u$ of unique elements in the stream with a \emph{Relative Standard Error (RSE)} of $1/\sqrt{K-1}$.
+
+%We first overview the sequential  sketch in Section~\ref{ssec:theta-overview}, 
+%and then explain how we parallelize it in Section~\ref{ssec:concurrent-theta}.
 
 \subsection{Overview}
 \label{ssec:theta-overview}
@@ -28,16 +31,16 @@ The error depends on the size of the sample set -- $K$.
  To this end, they need to adjust $\Theta$ on-the-fly, and prune elements of 
  the sample set whose hashes are greater than the new $\Theta$.
 %There are a number of approaches to do that. 
-A straightforward KMV solution keeps a sample of size $K$ 
+The KMV solution keeps a sample of size $K$ 
 holding the  values with the $K$ smallest hashes seen so far. 
 In this case $\Theta$ is $1$ during the first $K$ updates, and 
 subsequently it is the hash of the largest sample in the set.
 Once the sample set is full,
 every update that inserts  a new element also removes the largest
 element in the set and updates $\Theta$ accordingly. 
-This can be implemented efficiently by keeping the samples in  a min-heap. 
-A nice property of this KMV variant is that it is \emph{order agnostic}, i.e., produces 
-identical results for streams that consist of the same elements albeit in a different order.
+%This can be implemented efficiently by keeping the samples in  a min-heap. 
+%A nice property of this KMV variant is that it is \emph{order agnostic}, i.e., produces 
+%identical results for streams that consist of the same elements albeit in a different order.
 Note that since typically, $K \ll n$, the vast majority of hashes are larger than 
 $\Theta$,  and so most update operations complete without updating the sample set. 
 
@@ -137,7 +140,7 @@ to be included in the shared sketch.
 %Initially, all buffers are empty and all local $\Theta_i$s are $1$. 
 
 When the buffer of a thread $t_1$ becomes full, $t_1$ sorts it
-into an auxiliary array \emph{aux$_i$} and signals to the propagator  to union
+into an auxiliary array \emph{aux$_i$} and signals to the propagator  to merge
 it with the shared sketch (lines~\ref{l:sort}--\ref{l:signal}).
 In the meantime, $t_1$ proceeds to re-fill its buffer with new samples.
 The propagation  (line~\ref{l:aux}), in turn,  is highly optimized, as it merges a sorted array of 

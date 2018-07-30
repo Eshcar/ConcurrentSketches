@@ -7,7 +7,8 @@
 Real-time analytics are becoming increasingly prevalent in many businesses. 
 Examples include Yahoo's Flurry~\cite{flurry} --
 %\footnote{\url{https://developer.yahoo.com/flurry/docs/analytics/}},
-the technology behind Mobile Developer Analytics, and Digits Yahoo Corporate-Wide dashboard for monitoring KPIs and understanding traffic trends at different granularities~\cite{digits},
+the technology behind Mobile Developer Analytics, and Digits Yahoo Corporate-Wide dashboard for monitoring KPIs and traffic trends%at different granularities
+~\cite{digits},
 %\footnote{\url{https://digits3.yahoo.com}},
 as well as Google's F1~\cite{Shute2013}, which powers its AdWords
 %\footnote{\url{https://www.google.com/adwords/}}
@@ -60,11 +61,11 @@ queryable sketch. The challenge is to do so without slowing down the update thre
 given that access to shared data requires  synchronization via costly memory fences 
 and shared data updates can cause frequent invalidations in L1 caches, severely impacting performance. 
 Figure~\ref{fig:lockBased} compares the throughput of the
-sequential implementation Theta sketch given in DataSketch with
+sequential Theta sketch implementation given in DataSketch with
 and without a lock.
 The cost of acquiring a lock in every
 operation on the sketch is very high since the sketches are
-inherently fast data structures.
+inherently fast structures.
 
 \begin{figure*}[t!]
     \centering
@@ -81,29 +82,28 @@ inherently fast data structures.
         \caption{Quantile sketch}
         \label{fig:LockIsBadQuantiles}
     \end{subfigure}
-    \caption{Throughput of sequential sketch vs. lock-based sketch running a single thread write-only workload.}
+    \caption{Throughput of sequential sketch vs. lock-based sketch running a single write-only thread.}
     \label{fig:lockBased}
 \end{figure*}
 
 
 
 % This paper
-%In this paper 
-We present a general approach for building concurrent sketches that
+In this paper 
+we present a general approach for building concurrent sketches that
 constantly reflect all data processed by multiple update threads, 
 and serve queries at any time. % during the stream processing. 
  % Basic idea for parallelizing
 Our  approach employs multiple worker threads that buffer sketches of bounded-size substreams in thread-local memory, while a dedicated helper thread 
-periodically \emph{propagates} these local buffers into a common data structure via a union-like operation.
- Reducing data contention and the frequency of synchronization between the worker threads and the propagator is instrumental for achieving good performance. Queries are served from the common data structure, and are carefully 
- designed to take a \emph{consistent snapshot} of this data structure in case it is updated in parallel with them.
+periodically \emph{propagates} these local buffers into a shared data structure via a union-like operation.
+ Reducing data contention and the frequency of synchronization between the worker threads and the propagator is instrumental for achieving good performance. Queries are served from the shared data structure, and are carefully 
+ designed to take its \emph{consistent snapshot} in case it is updated in parallel with them.
 
 We implement our approach for two popular sketches in the Java Sketches Library -- $\Theta$~\cite{Theta},
 which estimates the number of unique elements in a stream, and quantiles~\cite{quantiles}.
 %worst-case error an adversarial scheduler can induce, 
-We experimentally show the algorithms' high performance and scalability. 
- % Experiments
-\inred{We have good performance results and linear speedup (quantify).}
-  
+Experiments show the algorithms scales almost linearly: with 28 threads updates throughput is order of magnitude greater than with a single threads; 
+read throughput is 3 orders of magnitude greater than the read throughput of the lock-based implementation.  
+
 
  

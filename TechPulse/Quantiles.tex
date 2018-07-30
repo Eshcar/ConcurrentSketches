@@ -1,7 +1,6 @@
 \section{Quantiles Sketch}
 \label{sec:quantiles}
 
-\subsection{Overview}
 
 Given a stream $A$ of items from an ordered domain, for every
 $0< \phi < 1$, $\phi - quantile$ of $A$ is an item with rank 
@@ -13,10 +12,11 @@ with rank between $ (\phi - \epsilon) |A|$ and $ (\phi +
 For every stream $A$, error $\epsilon$ and probabilty $\delta$,
 a quantiles sketch algorithm produces a summary of $A$, which
 supports $\epsilon -approximate ~\phi - quantile$ quires for
-every $0< \phi < 1$ with probability
+every $0< \phi < 1$ namely, returning an element with rank between $(\phi-\epsilon)n$ and  $(\phi+\epsilon)n$ with probability
 at least $1 - \delta$.
 
-As in the Theta sketch presented in the previous section, there
+\subsection{Overview}
+As in the Theta sketch, there
 is a tradeoff between summaries space cost and quires accuracy,
 which have been widely studied in the past.
 In this work we build on top of an algorithm presented
@@ -80,7 +80,7 @@ Since it is not the focus of our paper we omit the error analysis
 of the algorithm, and refer the interested reader to~\cite{} for
 the proof and more details.
 
-\begin{figure}[H]
+\begin{figure}[tb]
     \centering
     \includegraphics[width=3.2in]{images/quantilesPropogation.pdf}
     \caption{Quantile sketch: Propagating base buffer

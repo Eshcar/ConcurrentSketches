@@ -1,14 +1,15 @@
 \begin{abstract}
-Sketches are algorithms extracting information from a stream of data in a single pass that can be queried and generate approximate result with bounded error. They are implemented as small efficient data structures using various randomization techniques. Despite the fact that they are designed to be used in big data systems for real time processing their implementation is not thread-safe; each sketch object can be accessed only by a single thread at a time.
+Sketches are algorithms extracting information from a stream of data in a single pass. A query then generates approximate result with bounded error. Sketches are implemented as small efficient data structures using various randomization techniques. Despite the fact that they are designed to be used in big data systems for real time processing their current implementation is not thread-safe; each sketch object can be accessed only by a single thread at a time.
 Our goal is to design  sketches that (1) allow queries to be processed while the sketch is being built; and (2) 
 support parallel construction of the sketch via multiple threads.
-The challenge in achieving (1) is that a sketch update is not always atomic, and intermediate 
+The challenge is that a sketch update is not always atomic, and intermediate 
 states of the sketch may be bogus, leading to gross estimation errors. 
 For this reason, some applications that use sketches synchronize all access to them, which, is detrimental to performance (in our experiment, reducing throughput threefold). 
-The challenge with (2) is again, the need to support concurrent queries. 
-Although sketches are naturally amenable to parallel construction via separate threads each summarizing a substream followed by a union operator that merges all the substream sketches, this approach 
+An approach with multiple threads, each summarizing a sub-stream followed by a union operator that merges all the sub-stream sketches
 does not allow queries to be processed in real-time before the sketch is  merged.
 
-We present concurrent algorithms for the theta (count distinct) and quantiles sketches. 
-We experimentally show the algorithms' high performance and scalability in write-only and mixed read-write workloads.
+We present a general approach for building concurrent sketches that
+constantly reflect all data processed by multiple update threads, 
+and serve queries at any time. We focus on concurrent implementations for the theta (count distinct) and quantiles sketches. 
+Experiments show the algorithms' high performance and scalability in write-only and mixed read-write workloads.
 \end{abstract}
