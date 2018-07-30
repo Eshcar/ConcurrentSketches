@@ -1,7 +1,29 @@
-\documentclass[11pt, a4paper]{article}
+\documentclass{sig-alternate}
+%\documentclass[twocolumn,10pt, a4paper]{article}
 
-\input{mypackages.tex}
-\input{mystyle.tex}
+\usepackage{graphicx,url,color}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm}
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{amsmath}
+%\usepackage{caption}yes
+\usepackage[skip=0pt]{subcaption}
+%\usepackage[tight]{subfigure}
+\usepackage{eepic}
+%\usepackage{dblfloatfix} % fix for bottom-placement of figure 
+%\usepackage{perpage}
+\usepackage{balance}
+\usepackage{multicol}
+
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+\newcommand{\inred}[1]{{\color{red}{#1}}}
+\newcommand{\inblue}[1]{{\color{blue}{#1}}}
+\newcommand{\remove}[1]{}
+
 
 % declaration of variables and foreach blocks
 \algblock{Vars}{EndFor}
@@ -16,21 +38,25 @@
 \title{Fast Concurrent Data Sketches} 
 %with Lightweight Synchronization}
 
-\author{Alexander Spiegelman, 
-Edward Bortnikov,  
-Eshcar Hillel, 
-Idit Keidar 
-et al.}
- 
-%    \author{{Alexander Spiegelman} \thanks{Alexander Spiegelman is
-%      grateful to the Azrieli Foundation or the award of
-%   an Azrieli Fellowship.} \\Viterbi EE
-%      Department\\Technion, Haifa, Israel\\sashas@tx.technion.ac.il\\
-%      \and
-%      {Idit Keidar}\\Viterbi EE
-%      Department\\Technion, Haifa, Israel\\idish@ee.technion.ac.il
-%      }
-   
+\numberofauthors{5}
+\author{
+ \alignauthor Alexander Spiegelman\\
+   \affaddr Technion\\
+   \email{sashas@tx.technion.ac.il}
+ \alignauthor Edward Bortnikov\\
+    \affaddr Yahoo Research\\
+    \email{ebortnik@oath.com}
+ \alignauthor{Eshcar Hillel}\\
+   \affaddr Yahoo Research\\
+   \email{eshcar@oath.com}
+\and
+ \alignauthor{Idit Keidar}\\
+   \affaddr Technion, Yahoo Research\\
+   \email{idish@ee.technion.co.il}
+\alignauthor Lee Rhodes\\
+    \affaddr Yahoo \\ 
+    \email{lrhodes@oath.com}
+}
 
 \date{}
 
@@ -59,7 +85,7 @@ et al.}
 %\newpage
 \bibliographystyle{plain}
 %\bibliographystyle{splncs03}
-\bibliography{ConcurrentSketches}
+\bibliography{sketches}
 
 
 
