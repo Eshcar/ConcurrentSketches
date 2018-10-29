@@ -1,4 +1,4 @@
-\section{discussion}
+\section{Discussion}
 \label{sec:discussion}
 
-\inred{mention we are in the process of committing this to the library, and next plan/wish to integrate with druid and to measure end-to-end in real-time indexing in druid}
+We present a general approach for implementing concurrent data sketches. Specifically, we describe concurrent algorithms and implementations for the Theta and Quantile sketches. We measure the performance of these sketches and show they scale almost linearly with the number of sketch, out-performing their sequential and lock-based counterparts. We are currently in the process of committing this code to the DataSketch library. In the future we plan to integrate it with applications like Druid by replacing the lock-based instantiation  and to measure the affect on ingestion and query performance in real-time indexing.

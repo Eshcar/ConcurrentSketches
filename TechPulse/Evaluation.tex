@@ -69,7 +69,7 @@ and shorter runs and the results were the same.
 
 \begin{figure}[h]
   \centering
-  \includegraphics*[width=3.2in]{images/concurrentThetaGraph}
+  \includegraphics*[width=3.1in]{images/concurrentThetaGraph}
   \caption{Theta sketch update-only workload}
    \label{fig:ConccurentTheta}
 \end{figure}
@@ -114,11 +114,11 @@ background thread to support more worker threads we have to
 increase the number local levels.
 O local levels are enough for 2 threads, 2 local levels are good
 for 12 threads, and for perfect scalability on our machine in
-update-only workload we need 4 local levels\footnote{we are counting the number of local levels below the buffer that is propagated to the shared buffer}.
+update-only workload we need 4 local levels\footnote{counting the number of local levels below the level that is propagated to the shared buffer}.
 
 \begin{figure}[h]
   \centering
-  \includegraphics*[width=3.2in]{images/QuantilesUpdate}
+  \includegraphics*[width=3.1in]{images/QuantilesUpdate}
   \caption{Quantile sketch update-only workload}
    \label{fig:ConccurentQuantilesUpdate}
 \end{figure}
@@ -138,7 +138,7 @@ worker threads than in the update-only workload.
 
 \begin{figure}[h]
   \centering
-  \includegraphics*[width=3.2in]{images/QuantilesMixed}
+  \includegraphics*[width=3.1in]{images/QuantilesMixed}
   \caption{Quantile sketch mixed workload}
    \label{fig:ConccurentQuantilesReader}
 \end{figure}
